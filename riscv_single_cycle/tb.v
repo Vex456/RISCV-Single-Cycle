@@ -1,77 +1,58 @@
 `timescale 1ns / 1ps
+`include "alu.v"
 
-module tb;
+module tb_alu;
+    reg  [31:0] a, b;
+    reg  [3:0]  alu_control;
+    wire [31:0] alu_result;
+    wire        zero;
 
-    // 1. Inputs to DUT are declared as reg
-    reg clk;
-    reg rst;
-    reg [31:0] pc_next;
-
-    // 2. Outputs from DUT are declared as wire
-    wire [31:0] pc;
-    wire [31:0] pc_plus4;
-
-    // 3. Instantiate the Units Under Test (DUT)
-    program_counter u_pc (
-        .clk(clk),
-        .rst(rst),
-        .pc_next(pc_next),
-        .pc(pc)
+    alu dut (
+        .a(a),
+        .b(b),
+        .alu_control(alu_control),
+        .alu_result(alu_result),
+        .zero(zero)
     );
 
-    pc_adder u_adder (
-        .pc(pc),
-        .pc_plus4(pc_plus4)
-    );
-
-    // 4. Clock generation: toggles every 5ns -> Period = 10ns (100 MHz)
-    always #5 clk = ~clk;
-
-    // 5. Test Stimulus
     initial begin
-        // Generate VCD waveform file
-        $dumpfile("dump.vcd");
-        $dumpvars(0, tb);
+        $display("==================================================");
+        $display("              ALU VERIFICATION RUN                ");
+        $display("==================================================");
 
-        // Print header and monitor signal changes
-        $display("----------------------------------------------------------------------");
-        $display(" Time(ns) | rst |       pc       |    pc_plus4    |    pc_next     ");
-        $display("----------------------------------------------------------------------");
-        $monitor("   %4t   |  %b  |   0x%08h   |   0x%08h   |   0x%08h   ",
-                 $time, rst, pc, pc_plus4, pc_next);
+        // 1. Test ADD (10 + 3 = 13)
+        a = 32'd10; b = 32'd3; alu_control = 4'b0010; #10;
+        $display("ADD (10 + 3)       -> Result: %0d (Expected: 13) | Zero: %b", alu_result, zero);
 
-        // Initial state: Assert Reset
-        clk = 0;
-        rst = 1;
-        pc_next = 32'h00000000;
+        // 2. Test SUB (10 - 3 = 7)
+        a = 32'd10; b = 32'd3; alu_control = 4'b0110; #10;
+        $display("SUB (10 - 3)       -> Result: %0d (Expected: 7)  | Zero: %b", alu_result, zero);
 
-        // Hold reset for 2 clock periods (20ns)
-        #20;
-        rst = 0;
+        // 3. Test SUB with Zero Flag (10 - 10 = 0)
+        a = 32'd10; b = 32'd10; alu_control = 4'b0110; #10;
+        $display("SUB (10 - 10)      -> Result: %0d (Expected: 0)  | Zero: %b (Expected: 1)", alu_result, zero);
 
-        // Simulate 5 normal sequential clock cycles (PC increments by 4)
-        repeat (5) begin
-            @(posedge clk);
-            #1; // small delay after clock edge
-            pc_next = pc_plus4;
-        end
+        // 4. Test AND (10 & 3 = 2)
+        a = 32'd10; b = 32'd3; alu_control = 4'b0000; #10;
+        $display("AND (10 & 3)       -> Result: %0d (Expected: 2)  | Zero: %b", alu_result, zero);
 
-        // Simulate a Jump / Branch (force PC to jump to 0x00000100)
-        @(posedge clk);
-        #1;
-        pc_next = 32'h00000100;
+        // 5. Test OR (10 | 3 = 11)
+        a = 32'd10; b = 32'd3; alu_control = 4'b0001; #10;
+        $display("OR  (10 | 3)       -> Result: %0d (Expected: 11) | Zero: %b", alu_result, zero);
 
-        // Resume sequential counting after the branch
-        repeat (3) begin
-            @(posedge clk);
-            #1;
-            pc_next = pc_plus4;
-        end
+        // 6. Test XOR (10 ^ 3 = 9)
+        a = 32'd10; b = 32'd3; alu_control = 4'b0011; #10;
+        $display("XOR (10 ^ 3)       -> Result: %0d (Expected: 9)  | Zero: %b", alu_result, zero);
 
-        #20;
-        $display("----------------------------------------------------------------------");
-        $display("SUCCESS: Testbench completed successfully!");
+        // 7. Test SLT (Positive numbers: 3 < 10 = 1)
+        a = 32'd3; b = 32'd10; alu_control = 4'b0111; #10;
+        $display("SLT (3 < 10)       -> Result: %0d (Expected: 1)  | Zero: %b", alu_result, zero);
+
+        // 8. Test SLT (Signed negative numbers: -5 < 3 = 1)
+        a = -32'd5; b = 32'd3; alu_control = 4'b0111; #10;
+        $display("SLT (-5 < 3)       -> Result: %0d (Expected: 1)  | Zero: %b", alu_result, zero);
+
+        $display("==================================================");
         $finish;
     end
-
 endmodule
