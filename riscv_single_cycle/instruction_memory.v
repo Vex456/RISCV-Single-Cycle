@@ -2,7 +2,7 @@ module instruction_memory (
     input [31:0] pc,
     output [31:0] instruction
 );
-reg [31:0] memory [1023:0] ;
+reg [31:0] memory [0:1023];
 
 //load instruction machine codes into memory
 initial begin

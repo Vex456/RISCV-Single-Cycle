@@ -1,5 +1,14 @@
+`timescale 1ns / 1ps
+`include "program_counter.v"
+`include "pc_adder.v"
+`include "instruction_memory.v"
+`include "decoder.v"
+`include "control_unit.v"
+`include "register_file.v"
+`include "alu.v"
+
 module riscv_top (
-    input clk,rst
+    input clk, rst
 );
     // 1. PC wires
     wire [31:0] pc;
@@ -7,15 +16,15 @@ module riscv_top (
     wire [31:0] pc_plus4;
     // 2. Instruction wires
     wire [31:0] instruction;
-    // 3. Decoder wires
+    // 3. decoder wires
     wire [6:0] opcode;
     wire [4:0] rd, rs1, rs2;
     wire [2:0] func3;
     wire [6:0] func7;
-    // 4. Control wires
+    // 4. control wires
     wire reg_write;
     wire [3:0] alu_control;
-    // 5. Register File & ALU wires
+    // 5. register file & ALU wires
     wire [31:0] read_data1, read_data2;
     wire [31:0] alu_result;
     wire zero;
